@@ -9,22 +9,30 @@
 
 #include "Tree.cpp"
 
-static std::vector<std::pair<char, int>> alphabet;
-static std::vector<std::pair<char, std::string>> codes;
-static std::vector<Tree> trees;
-static std::vector<Tree*> huffman;
+static std::vector<std::pair<char, int>> alphabet; // caractère + fréquence
+static std::vector<std::pair<char, std::string>> codes; // codage de Huffman pour chaque caractère
+static std::vector<Tree> trees; // liste des noeuds
+static std::vector<Tree*> huffman; // liste permettant de faire l'algorithme
 
-static std::ifstream file;
+// objets permettant de lire/écrire avec les fichiers
+static std::ifstream file; 
 static std::ofstream fileW;
 
+// Chemin vers les fichiers
 static std::string const textPath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple.txt";
 static std::string const textPath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice.txt";
 static std::string const textPath3 = "Q:/GitHub/Projet-Algo-1/files/alice.txt";
 
-static std::string const codePath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple.bin";
-static std::string const codePath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice.bin";
-static std::string const codePath3 = "Q:/GitHub/Projet-Algo-1/files/alice.bin";
+static std::string const codePath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple_comp.bin";
+static std::string const codePath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice_comp.bin";
+static std::string const codePath3 = "Q:/GitHub/Projet-Algo-1/files/alice_comp.bin";
 
+static std::string const freqPath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple_freq.txt";
+static std::string const freqPath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice_freq.txt";
+static std::string const freqPath3 = "Q:/GitHub/Projet-Algo-1/files/alice_freq.txt";
+
+
+// Fonction de comparaison
 
 bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
 {
@@ -37,6 +45,8 @@ bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
         return a.second < b.second;
     }
 }
+
+// Fonction permettant d'associer chaque caractère à sa fréquence
 
 void fillListAlphabet(std:: string textPath)
 {
@@ -83,6 +93,8 @@ void fillListAlphabet(std:: string textPath)
     }
 }
 
+// Fonction générant l'arbre binaire
+
 Tree* generateTree()
 {
     if (huffman.size() == 1)
@@ -101,7 +113,7 @@ Tree* generateTree()
         Tree* t2 = huffman[1];
 
 
-        // Crée l'arbre parent et le push
+        // Crée l'arbre parent et on l'insère
 
         Tree* node = new Tree("IN", t1->getFrequency() + t2->getFrequency());
 
@@ -134,14 +146,20 @@ Tree* generateTree()
         huffman.erase(huffman.begin());
         huffman.erase(huffman.begin());
 
+        // Cette fonction est récursive
+
         generateTree();
     }
 }
+
+// Fonction permettant de donner le code pour un caractère donné
 
 std::string codeLetter(char letter)
 {
     Tree* tree = nullptr;
     std::string code;
+
+    // On part de la racine correspondant à notre caractère
 
     for (auto it = trees.begin(); it != trees.end(); ++it)
     {
@@ -151,6 +169,8 @@ std::string codeLetter(char letter)
             break;
         }
     }
+
+    // On remonte jusqu'à la racine pour générer le code
 
     while (tree->getAncestor() != nullptr)
     {
@@ -169,10 +189,14 @@ std::string codeLetter(char letter)
         tree = theAncestor;
     }
 
+    // On le met dans le bon ordre
+
     std::reverse(code.begin(), code.end());
 
     return code;
 }
+
+// Fonction permettant de remplir la liste des caractères et de leurs codes (optimisation)
 
 void codeAllLetters()
 {
@@ -182,6 +206,8 @@ void codeAllLetters()
     }
 }
 
+// On génère le texte compressé
+
 void generateCode(Tree* src, std::string textPath, std::string codePath)
 {
     fileW.open(codePath, std::ofstream::out | std::ofstream::binary);
@@ -189,14 +215,15 @@ void generateCode(Tree* src, std::string textPath, std::string codePath)
 
     std::string lettre;
     std::string code;
-    std::string waitingBits = "";
+    std::string waitingBits = ""; // bits en attente, on peut écrire que par paquets de 8 (char)
 
     if (file.is_open())
     {
         while (file)
         {
             lettre = file.get();
-            
+
+            // On trouve le code correspondant au caracètre dans la liste "codes"
 
             for (auto it = codes.begin(); it != codes.end(); ++it)
             {
@@ -206,6 +233,8 @@ void generateCode(Tree* src, std::string textPath, std::string codePath)
                     break;
                 }
             }
+
+            // Selon la taille du code du caractère en traitement et les bits en attente on se place dans différents cas
 
             if (code.size() + waitingBits.size() > 8)
             {
@@ -239,16 +268,18 @@ void generateCode(Tree* src, std::string textPath, std::string codePath)
         std::cout << "Error opening file";
     }
 
-    fileW << "a";
-
     fileW.close();
 }
+
+// Fonction pour l'étape 4
 
 void compressionRatio(std::string original, std::string huffmaned)
 {
     float res = 1.0f -  (float)std::filesystem::file_size(huffmaned) / (float)std::filesystem::file_size(original);
     std::cout << "Le taux de compression pour " << original << " est de " << res << " %.\n";
 }
+
+// Fonction pour l'étape 5
 
 void avgSize()
 {
@@ -262,10 +293,14 @@ void avgSize()
     std::cout << "Le nombre de bits moyen pour coder une lettre est : " << res / (float)codes.size() << std::endl;
 }
 
-void codageHuffman(std::string textPath, std::string codePath)
+// "Routine" pour les 5 étapes
+
+void codageHuffman(std::string textPath, std::string codePath, std::string freqPath)
 {
 
-    fillListAlphabet(textPath);
+    fillListAlphabet(textPath); // On associe chaque caractère à sa fréquence
+
+    // On crée les noeuds pour chaque caractère
 
     for (auto& it : alphabet)
     {
@@ -279,15 +314,32 @@ void codageHuffman(std::string textPath, std::string codePath)
         huffman.push_back(&it);
     }
 
+    // generateTree() nous retourne la racine de l'arbre
+
     Tree* root = generateTree();
 
-    codeAllLetters();
+    codeAllLetters(); // on code chaque caractère
 
-    generateCode(root, textPath, codePath);
+    generateCode(root, textPath, codePath); // on génère le texte compressé
 
-    compressionRatio(textPath, codePath);
+    compressionRatio(textPath, codePath); // Etape 4
 
-    avgSize();
+    avgSize(); // Etape 5
+
+    // On crée nomtxt_freq.txt et on y met les informations qu'il faut
+
+    fileW.open(freqPath);
+
+    fileW << alphabet.size() << std::endl;
+
+    for (auto& it : alphabet)
+    {
+        fileW << it.first << " " << it.second << std::endl;
+    }
+
+    // On remet tout à zéro
+
+    fileW.close();
 
     alphabet.clear();
 
@@ -305,12 +357,11 @@ void codageHuffman(std::string textPath, std::string codePath)
 
 int main()
 {
-
     trees.reserve(1000);
 
-    codageHuffman(textPath1, codePath1);
-    codageHuffman(textPath2, codePath2);
-    codageHuffman(textPath3, codePath3);
+    codageHuffman(textPath1, codePath1, freqPath1);
+    codageHuffman(textPath2, codePath2, freqPath2);
+    codageHuffman(textPath3, codePath3, freqPath3);
 
     return 0;
 }
