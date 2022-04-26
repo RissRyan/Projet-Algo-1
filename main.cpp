@@ -21,9 +21,9 @@ static std::string const textPath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple.
 static std::string const textPath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice.txt";
 static std::string const textPath3 = "Q:/GitHub/Projet-Algo-1/files/alice.txt";
 
-static std::string const codePath1 = "Q:/GitHub/Projet-Algo-1/files/huffmaned1.txt";
-static std::string const codePath2 = "Q:/GitHub/Projet-Algo-1/files/huffmaned2.txt";
-static std::string const codePath3 = "Q:/GitHub/Projet-Algo-1/files/huffmaned3.txt";
+static std::string const codePath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple.bin";
+static std::string const codePath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice.bin";
+static std::string const codePath3 = "Q:/GitHub/Projet-Algo-1/files/alice.bin";
 
 
 bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
@@ -259,7 +259,7 @@ void avgSize()
         res += (float)(*it).second.size();
     }
 
-    std::cout << "Le nombre de bits moyen pour coder une lettre est : " << res / (float)codes.size();
+    std::cout << "Le nombre de bits moyen pour coder une lettre est : " << res / (float)codes.size() << std::endl;
 }
 
 void codageHuffman(std::string textPath, std::string codePath)
