@@ -4,6 +4,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <bitset>
 
 #include "Tree.cpp"
 
@@ -12,8 +13,10 @@ static std::vector<Tree> trees;
 static std::vector<Tree*> huffman;
 
 static std::ifstream file;
+static std::ofstream fileW;
 
 static std::string const textPath = "C:/Dev/Mini projet 1/files/extraitalice.txt";
+static std::string const codePath = "C:/Dev/Mini projet 1/files/huffmaned.txt";
 
 
 bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
@@ -128,6 +131,95 @@ Tree* generateTree()
     }
 }
 
+std::string codeLetter(char letter)
+{
+    Tree* tree = nullptr;
+    std::string code;
+
+    for (auto it = trees.begin(); it != trees.end(); ++it)
+    {
+        if ((*it).getLetter() != "IN" && ((*it).getLetter())[0] == letter)
+        {
+            tree = &(*it);
+            break;
+        }
+    }
+
+    while (tree->getAncestor() != nullptr)
+    {
+        Tree* theAncestor = tree->getAncestor();
+
+        if (theAncestor->getChildren().first == tree)
+        {
+            code += "0";
+        }
+
+        if (theAncestor->getChildren().second == tree)
+        {
+            code += "1";
+        }
+
+        tree = theAncestor;
+    }
+
+    std::reverse(code.begin(), code.end());
+
+    return code;
+}
+
+void generateCode(Tree* src)
+{
+    fileW.open(codePath, std::ofstream::out | std::ofstream::binary);
+    file.open(textPath);
+
+    std::string lettre;
+    std::string code;
+    std::string waitingBits = "";
+
+    if (file.is_open())
+    {
+        while (file)
+        {
+            lettre = file.get();
+            code = codeLetter(lettre[0]);
+
+            if (code.size() + waitingBits.size() > 8)
+            {
+                waitingBits += code;
+                std::bitset<8> myBits(waitingBits.substr(0, 8));
+                waitingBits.erase(0, 8);
+                unsigned long i = myBits.to_ulong();
+                unsigned char c = static_cast<unsigned char>(i);
+                fileW << c;
+
+            }
+            else if (code.size() + waitingBits.size() < 8)
+            {
+                waitingBits += code;
+            }
+            else
+            {
+                std::bitset<8> myBits(waitingBits + code);
+                waitingBits = "";
+                unsigned long i = myBits.to_ulong();
+                unsigned char c = static_cast<unsigned char>(i);
+                fileW << c;
+            }
+
+        }
+
+        file.close();
+    }
+    else
+    {
+        std::cout << "Error opening file";
+    }
+
+    fileW << "a";
+
+    fileW.close();
+}
+
 int main()
 {
 
@@ -148,6 +240,8 @@ int main()
     }
 
     Tree* root = generateTree();
+
+    generateCode(root);
 
     return 0;
 }
