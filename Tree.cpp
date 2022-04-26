@@ -16,6 +16,9 @@ public:
 	{
 	}
 
+	~Tree()
+	{}
+
 	void setChild(Tree* child, char leftOrRight)
 	{
 		if (leftOrRight == 'l')

@@ -5,18 +5,25 @@
 #include <iterator>
 #include <algorithm>
 #include <bitset>
+#include <filesystem >
 
 #include "Tree.cpp"
 
 static std::vector<std::pair<char, int>> alphabet;
+static std::vector<std::pair<char, std::string>> codes;
 static std::vector<Tree> trees;
 static std::vector<Tree*> huffman;
 
 static std::ifstream file;
 static std::ofstream fileW;
 
-static std::string const textPath = "C:/Dev/Mini projet 1/files/extraitalice.txt";
-static std::string const codePath = "C:/Dev/Mini projet 1/files/huffmaned.txt";
+static std::string const textPath1 = "Q:/GitHub/Projet-Algo-1/files/textesimple.txt";
+static std::string const textPath2 = "Q:/GitHub/Projet-Algo-1/files/extraitalice.txt";
+static std::string const textPath3 = "Q:/GitHub/Projet-Algo-1/files/alice.txt";
+
+static std::string const codePath1 = "Q:/GitHub/Projet-Algo-1/files/huffmaned1.txt";
+static std::string const codePath2 = "Q:/GitHub/Projet-Algo-1/files/huffmaned2.txt";
+static std::string const codePath3 = "Q:/GitHub/Projet-Algo-1/files/huffmaned3.txt";
 
 
 bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
@@ -31,7 +38,7 @@ bool cmp(std::pair<char, int>& a, std::pair<char, int>& b)
     }
 }
 
-void fillListAlphabet()
+void fillListAlphabet(std:: string textPath)
 {
     std::string lettre;
 
@@ -167,7 +174,15 @@ std::string codeLetter(char letter)
     return code;
 }
 
-void generateCode(Tree* src)
+void codeAllLetters()
+{
+    for (auto& it : alphabet)
+    {
+        codes.push_back(std::make_pair(it.first, codeLetter(it.first)));
+    }
+}
+
+void generateCode(Tree* src, std::string textPath, std::string codePath)
 {
     fileW.open(codePath, std::ofstream::out | std::ofstream::binary);
     file.open(textPath);
@@ -181,7 +196,16 @@ void generateCode(Tree* src)
         while (file)
         {
             lettre = file.get();
-            code = codeLetter(lettre[0]);
+            
+
+            for (auto it = codes.begin(); it != codes.end(); ++it)
+            {
+                if ((*it).first == lettre[0])
+                {
+                    code = (*it).second;
+                    break;
+                }
+            }
 
             if (code.size() + waitingBits.size() > 8)
             {
@@ -220,12 +244,28 @@ void generateCode(Tree* src)
     fileW.close();
 }
 
-int main()
+void compressionRatio(std::string original, std::string huffmaned)
+{
+    float res = 1.0f -  (float)std::filesystem::file_size(huffmaned) / (float)std::filesystem::file_size(original);
+    std::cout << "Le taux de compression pour " << original << " est de " << res << " %.\n";
+}
+
+void avgSize()
+{
+    float res = 0.0f;
+
+    for (auto it = codes.begin(); it != codes.end(); ++it)
+    {
+        res += (float)(*it).second.size();
+    }
+
+    std::cout << "Le nombre de bits moyen pour coder une lettre est : " << res / (float)codes.size();
+}
+
+void codageHuffman(std::string textPath, std::string codePath)
 {
 
-    trees.reserve(1000);
-
-    fillListAlphabet();
+    fillListAlphabet(textPath);
 
     for (auto& it : alphabet)
     {
@@ -235,13 +275,42 @@ int main()
 
     for (auto& it : trees)
     {
-        it.afficher();
+        //it.afficher();
         huffman.push_back(&it);
     }
 
     Tree* root = generateTree();
 
-    generateCode(root);
+    codeAllLetters();
+
+    generateCode(root, textPath, codePath);
+
+    compressionRatio(textPath, codePath);
+
+    avgSize();
+
+    alphabet.clear();
+
+    for (auto& it : trees)
+    {
+        it.~Tree();
+    }
+
+    trees.clear();
+
+    huffman.clear();
+
+    codes.clear();
+}
+
+int main()
+{
+
+    trees.reserve(1000);
+
+    codageHuffman(textPath1, codePath1);
+    codageHuffman(textPath2, codePath2);
+    codageHuffman(textPath3, codePath3);
 
     return 0;
 }
